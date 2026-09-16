@@ -1,0 +1,66 @@
+name: Qureo Solver
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Command"
+        required: true
+        default: "solve"
+        type: choice
+        options:
+          - status
+          - solve
+          - lecture
+
+      chapters:
+        description: "Chapters, example: 7-25"
+        required: false
+        default: ""
+
+      lecture:
+        description: "Lecture ID"
+        required: false
+        default: ""
+
+jobs:
+  run-qureo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run Qureo
+        env:
+          QUREO_ID: ${{ secrets.QUREO_ID }}
+          QUREO_PASS: ${{ secrets.QUREO_PASS }}
+        run: |
+          if [ "${{ inputs.command }}" = "status" ]; then
+            python qureo_solver.py status \
+              --id "$QUREO_ID" \
+              --pass "$QUREO_PASS"
+
+          elif [ "${{ inputs.command }}" = "lecture" ]; then
+            python qureo_solver.py lecture \
+              --id "$QUREO_ID" \
+              --pass "$QUREO_PASS" \
+              --lecture "${{ inputs.lecture }}"
+
+          elif [ "${{ inputs.command }}" = "solve" ]; then
+            python qureo_solver.py solve \
+              --id "$QUREO_ID" \
+              --pass "$QUREO_PASS" \
+              --chapters "${{ inputs.chapters }}"
+          fi
